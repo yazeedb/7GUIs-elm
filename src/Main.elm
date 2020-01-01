@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Counter
 import Html exposing (a, div, nav, text)
 import Html.Attributes exposing (href)
+import TempConverter
 import Url
 import Url.Parser exposing (Parser, map, oneOf, s)
 
@@ -23,7 +24,14 @@ main =
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (urlToPage url) Counter.initialModel, Cmd.none )
+    ( Model
+        key
+        url
+        (urlToPage url)
+        Counter.initialModel
+        TempConverter.initialModel
+    , Cmd.none
+    )
 
 
 type alias Model =
@@ -31,6 +39,7 @@ type alias Model =
     , url : Url.Url
     , currentPage : Page
     , counterModel : Counter.Model
+    , tempConverterModel : TempConverter.Model
     }
 
 
@@ -38,6 +47,7 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | CounterMsg Counter.Msg
+    | TempConverterMsg TempConverter.Msg
 
 
 type Page
@@ -87,6 +97,11 @@ update msg model =
                 |> Tuple.mapFirst (\cModel -> { model | counterModel = cModel })
                 |> Tuple.mapSecond (Cmd.map CounterMsg)
 
+        TempConverterMsg tempConverterMsg ->
+            TempConverter.update tempConverterMsg model.tempConverterModel
+                |> Tuple.mapFirst (\tModel -> { model | tempConverterModel = tModel })
+                |> Tuple.mapSecond (Cmd.map TempConverterMsg)
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -106,7 +121,8 @@ view model =
                     |> Html.map CounterMsg
 
             TempConverter ->
-                div [] [ text "Temp converter" ]
+                TempConverter.view model.tempConverterModel
+                    |> Html.map TempConverterMsg
 
             PageNotFound ->
                 div [] [ text "Page not found!" ]
