@@ -23,19 +23,21 @@ main =
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (urlToPage url), Cmd.none )
+    ( Model key url (urlToPage url) Counter.initialModel, Cmd.none )
 
 
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , currentPage : Page
+    , counterModel : Counter.Model
     }
 
 
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | CounterMsg Counter.Msg
 
 
 type Page
@@ -80,6 +82,11 @@ update msg model =
             , Cmd.none
             )
 
+        CounterMsg counterMsg ->
+            Counter.update counterMsg model.counterModel
+                |> Tuple.mapFirst (\cModel -> { model | counterModel = cModel })
+                |> Tuple.mapSecond (Cmd.map CounterMsg)
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -90,22 +97,18 @@ view model =
             , a [ href "/counter" ] [ text "Counter" ]
             , a [ href "/temp-converter" ] [ text "Temperature Converter" ]
             ]
-        , pageToView model.currentPage
+        , case model.currentPage of
+            Home ->
+                div [] [ text "Home page!" ]
+
+            Counter ->
+                Counter.view model.counterModel
+                    |> Html.map CounterMsg
+
+            TempConverter ->
+                div [] [ text "Temp converter" ]
+
+            PageNotFound ->
+                div [] [ text "Page not found!" ]
         ]
     }
-
-
-pageToView : Page -> Html.Html Msg
-pageToView page =
-    case page of
-        Home ->
-            div [] [ text "Home page!" ]
-
-        Counter ->
-            Counter.main
-
-        TempConverter ->
-            div [] [ text "Temp converter" ]
-
-        PageNotFound ->
-            div [] [ text "Page not found!" ]
