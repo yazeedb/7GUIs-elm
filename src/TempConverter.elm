@@ -46,7 +46,7 @@ update msg model =
                 Just newC ->
                     let
                         newF =
-                            fahrenheitToCelcius newC
+                            celciusToFahrenheit newC
                     in
                     ( { model
                         | celcius = String.fromFloat newC
@@ -90,16 +90,32 @@ update msg model =
                     )
 
 
-view : Model -> Html Msg
-view model =
-    div []
-        [ div []
-            [ input [ onInput ChangeCelcius, value model.celcius, type_ "number" ] []
-            , label [] [ text "Celius = " ]
-            , input [ onInput ChangeFahrenheit, value model.fahrenheit, type_ "number" ] []
-            , label [] [ text "Fahrenheit" ]
-            ]
-        ]
+updateFormValues : String -> Model -> ( Model, Cmd Msg )
+updateFormValues value model =
+    let
+        trimmedValue =
+            String.trim value
+    in
+    case String.toFloat trimmedValue of
+        Just newF ->
+            let
+                newC =
+                    fahrenheitToCelcius newF
+            in
+            ( { model
+                | celcius = String.fromFloat newC
+                , fahrenheit = String.fromFloat newF
+              }
+            , Cmd.none
+            )
+
+        Nothing ->
+            ( { model
+                | fahrenheit = trimmedValue
+                , celcius = initialModel.celcius
+              }
+            , Cmd.none
+            )
 
 
 celciusToFahrenheit : Float -> Float
@@ -110,3 +126,15 @@ celciusToFahrenheit c =
 fahrenheitToCelcius : Float -> Float
 fahrenheitToCelcius f =
     (f - 32) * (5 / 9)
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ div []
+            [ input [ onInput ChangeCelcius, value model.celcius, type_ "number" ] []
+            , label [] [ text "Celius = " ]
+            , input [ onInput ChangeFahrenheit, value model.fahrenheit, type_ "number" ] []
+            , label [] [ text "Fahrenheit" ]
+            ]
+        ]
