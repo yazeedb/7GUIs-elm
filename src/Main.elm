@@ -6,6 +6,7 @@ import Counter
 import Html exposing (a, div, nav, text)
 import Html.Attributes exposing (href)
 import TempConverter
+import Timer
 import Url
 import Url.Parser exposing (Parser, map, oneOf, s)
 
@@ -16,7 +17,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , onUrlChange = UrlChanged
         , onUrlRequest = LinkClicked
         }
@@ -30,6 +31,7 @@ init flags url key =
         (urlToPage url)
         Counter.initialModel
         TempConverter.initialModel
+        Timer.initialModel
     , Cmd.none
     )
 
@@ -40,6 +42,7 @@ type alias Model =
     , currentPage : Page
     , counterModel : Counter.Model
     , tempConverterModel : TempConverter.Model
+    , timerModel : Timer.Model
     }
 
 
@@ -48,12 +51,14 @@ type Msg
     | UrlChanged Url.Url
     | CounterMsg Counter.Msg
     | TempConverterMsg TempConverter.Msg
+    | TimerMsg Timer.Msg
 
 
 type Page
     = Home
     | Counter
     | TempConverter
+    | Timer
     | PageNotFound
 
 
@@ -63,6 +68,7 @@ urlParser =
         [ map Home Url.Parser.top
         , map Counter (s "counter")
         , map TempConverter (s "temp-converter")
+        , map Timer (s "timer")
         ]
 
 
@@ -102,6 +108,17 @@ update msg model =
                 |> Tuple.mapFirst (\tModel -> { model | tempConverterModel = tModel })
                 |> Tuple.mapSecond (Cmd.map TempConverterMsg)
 
+        TimerMsg timerMsg ->
+            Timer.update timerMsg model.timerModel
+                |> Tuple.mapFirst (\tModel -> { model | timerModel = tModel })
+                |> Tuple.mapSecond (Cmd.map TimerMsg)
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.map TimerMsg <|
+        Timer.subscriptions model.timerModel
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -111,6 +128,7 @@ view model =
             [ a [ href "/" ] [ text "Home" ]
             , a [ href "/counter" ] [ text "Counter" ]
             , a [ href "/temp-converter" ] [ text "Temperature Converter" ]
+            , a [ href "/timer" ] [ text "Timer" ]
             ]
         , case model.currentPage of
             Home ->
@@ -123,6 +141,10 @@ view model =
             TempConverter ->
                 TempConverter.view model.tempConverterModel
                     |> Html.map TempConverterMsg
+
+            Timer ->
+                Timer.view model.timerModel
+                    |> Html.map TimerMsg
 
             PageNotFound ->
                 div [] [ text "Page not found!" ]
