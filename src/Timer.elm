@@ -54,11 +54,7 @@ update msg model =
             ( { model | elapsedTimeMs = initialModel.elapsedTimeMs }, Cmd.none )
 
         Tick _ ->
-            if model.elapsedTimeMs >= toFloat model.durationMs then
-                ( model, Cmd.none )
-
-            else
-                ( { model | elapsedTimeMs = model.elapsedTimeMs + 100 }, Cmd.none )
+            ( { model | elapsedTimeMs = model.elapsedTimeMs + 100 }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
