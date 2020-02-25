@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Counter
+import Crud
 import Html exposing (a, div, nav, text)
 import Html.Attributes exposing (href)
 import TempConverter
@@ -32,6 +33,7 @@ init flags url key =
         Counter.initialModel
         TempConverter.initialModel
         Timer.initialModel
+        Crud.initialModel
     , Cmd.none
     )
 
@@ -43,6 +45,7 @@ type alias Model =
     , counterModel : Counter.Model
     , tempConverterModel : TempConverter.Model
     , timerModel : Timer.Model
+    , crudModel : Crud.Model
     }
 
 
@@ -52,6 +55,7 @@ type Msg
     | CounterMsg Counter.Msg
     | TempConverterMsg TempConverter.Msg
     | TimerMsg Timer.Msg
+    | CrudMsg Crud.Msg
 
 
 type Page
@@ -59,6 +63,7 @@ type Page
     | Counter
     | TempConverter
     | Timer
+    | Crud
     | PageNotFound
 
 
@@ -69,6 +74,7 @@ urlParser =
         , map Counter (s "counter")
         , map TempConverter (s "temp-converter")
         , map Timer (s "timer")
+        , map Crud (s "crud")
         ]
 
 
@@ -113,11 +119,20 @@ update msg model =
                 |> Tuple.mapFirst (\tModel -> { model | timerModel = tModel })
                 |> Tuple.mapSecond (Cmd.map TimerMsg)
 
+        CrudMsg crudMsg ->
+            Crud.update crudMsg model.crudModel
+                |> Tuple.mapFirst (\cModel -> { model | crudModel = cModel })
+                |> Tuple.mapSecond (Cmd.map CrudMsg)
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map TimerMsg <|
-        Timer.subscriptions model.timerModel
+    if model.currentPage == Timer then
+        Sub.map TimerMsg <|
+            Timer.subscriptions model.timerModel
+
+    else
+        Sub.none
 
 
 view : Model -> Browser.Document Msg
@@ -129,6 +144,7 @@ view model =
             , a [ href "/counter" ] [ text "Counter" ]
             , a [ href "/temp-converter" ] [ text "Temperature Converter" ]
             , a [ href "/timer" ] [ text "Timer" ]
+            , a [ href "/crud" ] [ text "Crud" ]
             ]
         , case model.currentPage of
             Home ->
@@ -145,6 +161,10 @@ view model =
             Timer ->
                 Timer.view model.timerModel
                     |> Html.map TimerMsg
+
+            Crud ->
+                Crud.view model.crudModel
+                    |> Html.map CrudMsg
 
             PageNotFound ->
                 div [] [ text "Page not found!" ]
